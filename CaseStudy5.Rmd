@@ -1,0 +1,176 @@
+---
+title: "Case Study 5"
+author: "Shubh Shah"
+date: "2024-11-19"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(fpc)
+
+```
+
+## Clustering Analysis
+
+For this portion, I will be random sampling 90% of the Iris database to perform K-means and Hierarchical clustering. Loaded in is the "fpc" library. I had first loaded in the iris data set, then had random sampled it. I had then displayed the statistics to understand the data I am working with.  
+ 
+
+```{r cars}
+data(iris)
+iris_1 = iris[sample(nrow(iris), nrow(iris) * 0.9), ]
+summary(iris_1)
+```
+
+I had then displayed a 5 cluster solution. To explain it better, a cluster would mean a group of observations with similar characterisitics based upon different metrics, example would include their distance or even hierarchial. In this scenario, we would have 5 different observations displayed. 
+
+```{r}
+fit <- kmeans(iris_1[,1:4], 5) # This would represent a 5 cluster solution
+table(fit$cluster)
+
+plotcluster(iris_1[,1:4], fit$cluster)
+# After I had plotted it, I wanted to see what is in each group
+
+fit$centers # This would provide the cluster means 
+```
+I had then performed Wards Method, where it would calculate the Euclidean distances between each observations from the first 4 columns of the data set. I then produced a dendrogram to visually show how it would be grouped. 
+
+```{r dendrogram, echo=TRUE, fig.width=7, fig.height=5}
+iris.dist = dist(iris_1[,1:4])
+iris.hclust = hclust(iris.dist, method = "ward.D")
+plot(iris.hclust)
+```
+
+From my dendrogram, I was confused into the cuts itself, I had then created multiple points to show different cuts established. 
+
+Ideally with 2, it would split it within 2 main groups. 
+```{r}
+groupIris.2 = cutree(iris.hclust, k = 2)
+table(groupIris.2)
+```
+When it is split within two groups, the values range between 40-50 and 80-90
+
+```{r}
+groupIris.3 = cutree(iris.hclust, k = 3)
+table(groupIris.3)
+```
+Here we had split between 3 and the values vary between 20-30-60 or 30-40-50. Occasionally a 30-40-60
+
+```{r aggregate-means, echo=TRUE}
+aggregate(iris_1[,1:4], by = list(groupIris.2), FUN = mean)
+plotcluster(iris_1[,1:4], groupIris.2)
+
+aggregate(iris_1[,1:4], by = list(groupIris.3), FUN = mean)
+plotcluster(iris_1[,1:4], groupIris.3)
+
+```
+We can now compare the plots between each other. From my previous runs, I had found that when split in two, certain categories such as Sepal.Length, Petal.Length, and Petal.Width would have a higher mean value which would represent a larger flower. Likewise, in previous run, I had a high Sepal.Width but a smaller Petal.Length and Petal.Width, which would represent a smaller flower. When I had made it into three clusters, we had a group that had corresponded with a median sized flower, one represented the largest, and one were the smallest. So it had done the split by size. This was seen by the means itself. Since my work would be random, it would be difficult to comment on these results. 
+
+## Association Rules 
+
+First, I had loaded in the preliminary data such as the library, and the Groceries data. The grocery dataset is the collection of items in a grocery store for a month. Understanding this data would provide us info in everyday shopping habits 
+
+```{r}
+library(arules)
+data("Groceries")
+```
+
+I had then performed data exploration. From my data exploration, I had found that the dimensions of the set were 9835 rows and 169 columns. The most frequently purchased item was milk, which was purchased a quarter of the time when shopping (or 2513 times within the month). The average transaction involved 4.4 items, whereas the largest was 32 items. This can be found within the summary or the itemFrequencyPlot 
+
+```{r}
+# Data Exploration 
+
+# What are the dimensions of the grocery dataset
+summary(Groceries)
+# We are able to see that there are 9835 rows and 169 columns 
+
+# What was the most frequently purchased item
+# This would be whole milk, look at either Frequency Item Plot or summary. Milk was purchased 1/4 of time when shopping. 
+
+# Average Transaction involved how many items:
+# this would be 4.4 items 
+
+#Largest transaction: 
+# 32 items 
+```
+
+Below would represent the first 10 transactions within the data. As we can see, just within the first 10 transaction, milk appears 5 times.
+```{r}
+# Print out the first 10 transactions 
+inspect(Groceries[1:10])
+
+```
+
+Below are going to be itemFrequency and itemFrequencyPlot, I had kept it default, which would show certain items with a value less than 0.1%. Ideally this would show all of the items. Once I had established a support and changed the size of the name, we would see that the chart drastically had cut down. We still see that milk is bought 25% of time when shopping, but also soda and rolls/buns are bought 20% shopping, fruits and vegetables are little bit above 10%, same with other vegetables. 
+```{r}
+# Frequency of Each item
+itemFrequency(Groceries)
+
+itemFrequencyPlot(Groceries)
+# This will show for all items with no support, or possibly a very small support Everything is merged and we cannot see. 
+
+
+itemFrequencyPlot(Groceries, support = 0.08, cex.names = 0.785) 
+# This will display the item frequency plot with a support of 8%, this drastically cut it down. 
+
+
+itemFrequencyPlot(Groceries, support = 0.1, cex.names = 0.785) 
+# This will display the item frequency plot with a support of 10%, this drastically cut 
+# it down. We are able to show that milk is bought 1/4 of the time each transaction 
+
+```
+
+
+```{r}
+# This is an example on if I have a low support and a low confidence.
+# An item combination LHS and RHS appear atleast 0.1% of the total transaction to be considered - support
+# Confidence 1% where when RHS is bought, so is LHS. 
+rules <- apriori(Groceries, parameter = list(support = 0.001, confidence = 0.01))
+length(rules)
+summary(rules)
+```
+With low parameters, we are able to see more than 10,000 rules are written to certain items. Within this, we are able to see that our lift is 2.6753.  Now say we changed up those parameters. Below I had changed it to a support of 2.5% and a confidence of 10%. After running it, we are able to see that 75 rules have been written. 8 of the rules involve 1 item and 67 rules involve 2 items. We are able to see that the average of the lift is 1.4945
+
+```{r}
+# As we can see, when we change it up to a support of 2.5% and a confidence of 10%, 
+# only 75 rules were written 
+rules <- apriori(Groceries, parameter = list(support = 0.025, confidence = 0.1))
+length(rules)
+
+summary(rules)
+# 8 rules involve 1 items, and 67 rules involve 2 items. 
+# average of the lift is 1.4945
+
+```
+
+After running those parameters, we are able to see the details in regards to the associations rules. For example, to interpret these results, we see rule one regards to bottle water. Its support is 11.05% and confidence is 11.05%. Its lift is 1, since there is no LHS. Likewise if we go to rule 9 where the LHS is curd and RHS is Whole Milk, we are able to see that the support is 0.0261 or 2.61%. This means that 2.61% include both curd and whole milk. With a confidence of 0.4905, it means 49.05% of transactions with curd would also include milk. Our lift was 1.919, meaning people who buy curd are 1.92 times likely to buy milk. I had then printed 10 rules and had sorted by the lift values. 
+
+```{r}
+inspect(rules)
+
+# using the inspect rules to see by lift 
+inspect(head(sort(rules, by = "lift"), n = 10))
+```
+Rule 1: {root vegetables} <=> {other vegetables}
+Customers who buy root vegetables are 2.25 times more likely to buy other vegetables, and vice versa.
+This association occurs in 4.74% of transactions. 
+
+Rule 2: {whipped/sour cream} <=> {other vegetables}
+Customers who buy whipped/sour cream are 2.08 times more likely to buy other vegetables, and vice versa.
+This relationship is present in 2.89% of transactions
+
+Rule 3: {tropical fruit} <=> {yogurt}
+Customers who buy tropical fruit are 2.00 times more likely to buy yogurt, and vice versa.
+This association occurs in 2.93% of transactions
+
+Rule 4: {butter} <=> {whole milk}
+Customers who buy butter are 1.95 times more likely to buy whole milk, and vice versa.
+This association occurs in 2.76% of transactions
+
+Rule 5: {curd} <=> {whole milk}
+Customers who buy curd are 1.92 times more likely to buy whole milk, and vice versa.
+This relationship is present in 2.61% of transactions
+

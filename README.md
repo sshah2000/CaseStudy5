@@ -22,8 +22,6 @@
 5. [Results](#results)  
 6. [Business Interpretation](#business-interpretation)  
 7. [Reproducibility](#reproducibility)  
-8. [GitHub Topics](#github-topics)  
-9. [Author](#author)
 
 ---
 
